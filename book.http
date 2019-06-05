@@ -6,10 +6,9 @@ GET http://localhost:8000/books/2
 
 ###
 POST http://localhost:8000/books HTTP/1.1
-content-type: application/json
-
+Content-Type: text/plain
 {
-  "id": 1,
+  "id": 6,
 	"title": "book 1",
 	"author": "author of book 1",
 	"year": "2019",
