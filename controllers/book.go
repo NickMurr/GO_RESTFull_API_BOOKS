@@ -4,8 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go_course/2-rest-api/book-list/driver"
+	bookrepository "github.com/go_course/2-rest-api/book-list/repository/book"
+
 	"github.com/go_course/2-rest-api/book-list/models"
 	"github.com/gorilla/mux"
 )
@@ -19,42 +22,34 @@ var books []models.Book
 func (c Controller) GetBooks(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var book models.Book
-
 		books = []models.Book{}
+		bookRepo := bookrepository.BookRepository{}
 
-		rows, err := db.Query("select * from books;")
-		driver.LogFatal(err)
-
-		defer rows.Close()
-
-		for rows.Next() {
-			err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Year)
-			driver.LogFatal(err)
-
-			books = append(books, book)
-		}
+		books = bookRepo.GetBooks(db, book, books)
 
 		json.NewEncoder(w).Encode(books)
-
 	}
 }
 
-// GetBook return one book item
+// GetBook return single BOOK
 func (c Controller) GetBook(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var book models.Book
 		params := mux.Vars(r)
 
-		rows := db.QueryRow("select * from books where id=$1", params["id"])
+		books = []models.Book{}
+		bookRepo := bookrepository.BookRepository{}
 
-		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Year)
+		id, err := strconv.Atoi(params["id"])
 		driver.LogFatal(err)
+
+		book = bookRepo.GetBook(db, book, id)
 
 		json.NewEncoder(w).Encode(book)
 	}
 }
 
-// AddBook adding book to the database
+// AddBook adding a book to DB
 func (c Controller) AddBook(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var book models.Book
@@ -62,42 +57,37 @@ func (c Controller) AddBook(db *sql.DB) http.HandlerFunc {
 
 		json.NewDecoder(r.Body).Decode(&book)
 
-		err := db.QueryRow("insert into books (title, author, year) values($1, $2, $3) RETURNING id;", book.Title, book.Author, book.Year).Scan(&bookID)
-		driver.LogFatal(err)
+		bookRepo := bookrepository.BookRepository{}
+		bookID = bookRepo.AddBook(db, book)
 
 		json.NewEncoder(w).Encode(bookID)
-
 	}
 }
 
-// UpdateBook updating book in the database
+// UpdateBook updating book in database
 func (c Controller) UpdateBook(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var book models.Book
 		json.NewDecoder(r.Body).Decode(&book)
 
-		result, err := db.Exec("update books set title=$1, author=$2, year=$3 where id=$4", &book.Title, &book.Author, &book.Year, &book.ID)
-
-		rowsUpdated, err := result.RowsAffected()
-		driver.LogFatal(err)
+		bookRepo := bookrepository.BookRepository{}
+		rowsUpdated := bookRepo.UpdateBook(db, book)
 
 		json.NewEncoder(w).Encode(rowsUpdated)
-
 	}
 }
 
-// RemoveBook removing book in the database
+// RemoveBook removing book from DB
 func (c Controller) RemoveBook(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
+		bookRepo := bookrepository.BookRepository{}
 
-		result, err := db.Exec("delete from books where id = $1", params["id"])
+		id, err := strconv.Atoi(params["id"])
 		driver.LogFatal(err)
 
-		rowsDeleted, err := result.RowsAffected()
-		driver.LogFatal(err)
+		rowsDeleted := bookRepo.RemoveBook(db, id)
 
 		json.NewEncoder(w).Encode(rowsDeleted)
-
 	}
 }
