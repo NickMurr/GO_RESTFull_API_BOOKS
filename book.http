@@ -1,0 +1,31 @@
+###
+GET http://localhost:8000/books
+
+###
+GET http://localhost:8000/books/2
+
+###
+POST http://localhost:8000/books HTTP/1.1
+content-type: application/json
+
+{
+  "id": 1,
+	"title": "book 1",
+	"author": "author of book 1",
+	"year": "2019",
+}
+
+###
+PUT http://localhost:8000/books HTTP/1.1
+content-type: application/json
+
+{
+  "id": 1,
+	"title": "book 2",
+	"author": "author of book 1",
+	"year": "2019",
+}
+
+
+###
+DELETE http://localhost:8000/books/1 HTTP/1.1
